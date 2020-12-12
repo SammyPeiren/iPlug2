@@ -1958,45 +1958,47 @@ private:
   WDL_TypedBuf<IRECT> mRects;
 };
 
-/** Used to store transformation matrices **/
+/** Used to perform 2D affine transformation
+ * https://en.wikipedia.org/wiki/Affine_transformation 
+ **/
 struct IMatrix
 {
-  /** \todo 
-   * @param xx \todo
-   * @param yx \todo
-   * @param xy \todo
-   * @param yy \todo
-   * @param tx \todo
-   * @param ty \todo */
+  /** Create an IMatrix, specifying the values
+   * @param xx xx component of the affine transformation
+   * @param yx yx component of the affine transformation
+   * @param xy xy component of the affine transformation
+   * @param yy yy component of the affine transformation
+   * @param tx X translation component of the affine transformation
+   * @param ty Y translation component of the affine transformation */
   IMatrix(double xx, double yx, double xy, double yy, double tx, double ty)
   : mXX(xx), mYX(yx), mXY(xy), mYY(yy), mTX(tx), mTY(ty)
   {}
   
-  /** \todo */
+  /** Create an identity matrix */
   IMatrix() : IMatrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
   {}
   
-  /** \todo 
-   * @param x \todo
-   * @param y \todo
-   * @return IMatrix& \todo */
+  /** Set the matrix for a translation transform
+   * @param x The translation for x values
+   * @param y The translation for y values
+   * @return IMatrix& The matrix */
   IMatrix& Translate(float x, float y)
   {
     return Transform(IMatrix(1.0, 0.0, 0.0, 1.0, x, y));
   }
   
-  /** \todo 
-   * @param x \todo
-   * @param y \todo
-   * @return IMatrix& \todo */
+  /** Set the matrix for a scale transform
+   * @param x The scale for x
+   * @param y The scale for y
+   * @return IMatrix& The matrix */
   IMatrix& Scale(float x, float y)
   {
     return Transform(IMatrix(x, 0.0, 0.0, y, 0.0, 0.0));
   }
   
-  /** \todo 
-   * @param a \todo
-   * @return IMatrix& \todo */
+  /** Set the matrix for a rotation transform
+   * @param a The angle of rotation in degrees
+   * @return IMatrix& The matrix */
   IMatrix& Rotate(float a)
   {
     const double rad = DegToRad(a);
@@ -2006,18 +2008,18 @@ struct IMatrix
     return Transform(IMatrix(c, s, -s, c, 0.0, 0.0));
   }
   
-  /** \todo 
-   * @param xa \todo
-   * @param ya \todo
-   * @return IMatrix& \todo */
+  /** Set the matrix for a skew transform
+   * @param xa The angle to skew x coordinates in degrees
+   * @param ya The angle to skew y coordinates in degrees
+   * @return IMatrix& The matrix */
   IMatrix& Skew(float xa, float ya)
   {
     return Transform(IMatrix(1.0, std::tan(DegToRad(ya)), std::tan(DegToRad(xa)), 1.0, 0.0, 0.0));
   }
   
-  /** \todo 
-   * @param x \todo
-   * @param y \todo
+  /** Transforms the point x, y  \todo
+   * @param x The x coordinate to transform
+   * @param y The y coordinate to transform
    * @param x0 \todo
    * @param y0 \todo */
   void TransformPoint(double& x, double& y, double x0, double y0) const
@@ -2026,9 +2028,9 @@ struct IMatrix
     y = x0 * mYX + y0 * mYY + mTY;
   };
   
-  /** \todo 
-   * @param x \todo
-   * @param y \todo */
+  /** Transforms the point x, y with the matrix
+   * @param x The x coordinate to transform
+   * @param y The y coordinate to transform */
   void TransformPoint(double& x, double& y) const
   {
     TransformPoint(x, y, x, y);
@@ -2037,7 +2039,7 @@ struct IMatrix
   /** \todo 
    * @param before \todo
    * @param after \todo
-   * @return IMatrix& \todo */
+   * @return IMatrix& The result of the transform */
   IMatrix& Transform(const IRECT& before, const IRECT& after)
   {
     const double sx = after.W() / before.W();
@@ -2048,9 +2050,9 @@ struct IMatrix
     return *this = IMatrix(sx, 0.0, 0.0, sy, tx, ty);
   }
   
-  /** \todo 
-   * @param m \todo
-   * @return IMatrix& \todo */
+  /** Transform this matrix with another 
+   * @param m The matrix with which to transform this one
+   * @return IMatrix& The result of the transform */
   IMatrix& Transform(const IMatrix& m)
   {
     IMatrix p = *this;
@@ -2065,8 +2067,8 @@ struct IMatrix
     return *this;
   }
   
-  /** \todo 
-   * @return IMatrix& \todo */
+  /** Changes the matrix to be the inverse of its original value
+   * @return IMatrix& The changed matrix */
   IMatrix& Invert()
   {
     IMatrix m = *this;
@@ -2240,24 +2242,23 @@ struct IPattern
     return pattern;
   }
   
-  /** \todo 
-   * @return int \todo */
+  /** @return int The number of IColorStops in the IPattern */
   int NStops() const
   {
     return mNStops;
   }
   
-  /** \todo 
-   * @param idx \todo
-   * @return const IColorStop& \todo */
+  /** Get the IColorStop at a particular index (will crash if out of bounds)
+   * @param idx The index of the stop
+   * @return const IColorStop& The stop */
   const IColorStop& GetStop(int idx) const
   {
     return mStops[idx];
   }
   
-  /** \todo 
-   * @param color \todo
-   * @param offset \todo */
+  /** Add an IColorStop to the IPattern
+   * @param color The IColor
+   * @param offset The offset */
   void AddStop(IColor color, float offset)
   {
     assert(mType != EPatternType::Solid && mNStops < 16);
@@ -2266,19 +2267,19 @@ struct IPattern
       mStops[mNStops++] = IColorStop(color, offset);
   }
   
-  /** \todo 
-   * @param xx \todo
-   * @param yx \todo
-   * @param xy \todo
-   * @param yy \todo
-   * @param x0 \todo
-   * @param y0 \todo */
-  void SetTransform(float xx, float yx, float xy, float yy, float x0, float y0)
+  /** Set the affine transform for the IPattern with values 
+   * @param xx xx component of the affine transformation
+   * @param yx yx component of the affine transformation
+   * @param xy xy component of the affine transformation
+   * @param yy yy component of the affine transformation
+   * @param tx X translation component of the affine transformation
+   * @param ty Y translation component of the affine transformation */
+  void SetTransform(float xx, float yx, float xy, float yy, float tx, float ty)
   {
-    mTransform = IMatrix(xx, yx, xy, yy, x0, y0);
+    mTransform = IMatrix(xx, yx, xy, yy, tx, ty);
   }
   
-  /** \todo 
+  /** Set the affine transform for the IPattern with an IMatrix 
    * @param transform \todo */
   void SetTransform(const IMatrix& transform)
   {
