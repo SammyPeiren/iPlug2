@@ -1958,9 +1958,7 @@ private:
   WDL_TypedBuf<IRECT> mRects;
 };
 
-/** Used to perform 2D affine transformation
- * https://en.wikipedia.org/wiki/Affine_transformation 
- **/
+/** Used to store transformation matrices **/
 struct IMatrix
 {
   /** Create an IMatrix, specifying the values
